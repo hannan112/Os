@@ -1,0 +1,25 @@
+#!/bin/bash
+
+generate_pattern() {
+    read -p "Enter the number of rows (N): " N
+    
+    # Validate input to ensure it's a positive integer
+    if [[ ! $N =~ ^[1-9][0-9]*$ ]]; then
+        echo "Error: Please enter a positive integer."
+        return
+    fi
+    
+    # Generating the inverted right angle triangle pattern
+    for ((i=N; i>=1; i--)); do
+        for ((j=1; j<=N-i; j++)); do
+            echo -n " "
+        done
+        for ((j=1; j<=i; j++)); do
+            echo -n "*"
+        done
+        echo
+    done
+}
+
+# Call the function
+generate_pattern

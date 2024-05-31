@@ -1,0 +1,96 @@
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+using namespace std;
+
+mutex mtx;
+condition_variable cv;
+bool ready = false;
+
+// Semaphore implementation
+class Semaphore {
+public:
+    Semaphore(int count = 0) : count_(count) {}
+
+    void notify() {
+        unique_lock<mutex> lock(mtx);
+        count_++;
+        cv.notify_one();
+    }
+
+    void wait() {
+        unique_lock<mutex> lock(mtx);
+        while (count_ == 0) {
+            cv.wait(lock);
+        }
+        count_--;
+    }
+
+private:
+    mutex mtx;
+    condition_variable cv;
+    int count_;
+};
+
+Semaphore S1(0), S2(0), S3(0), S4(0);
+
+void threadA() {
+    // Thread A logic
+    cout << "Thread A is executing." << endl;
+    // Signal completion of A
+    S1.notify();
+}
+
+void threadB() {
+    // Wait for A to complete
+    S1.wait();
+    // Thread B logic
+    cout << "Thread B is executing." << endl;
+    // Signal completion of B
+    S2.notify();
+}
+
+void threadC() {
+    // Wait for E to complete
+    S4.wait();
+    // Thread C logic
+    cout << "Thread C is executing." << endl;
+}
+
+void threadD() {
+    // Wait for A to complete
+    S1.wait();
+    // Thread D logic
+    cout << "Thread D is executing." << endl;
+    // Signal completion of D
+    S3.notify();
+}
+
+void threadE() {
+    // Wait for B to complete
+    S2.wait();
+    // Thread E logic
+    cout << "Thread E is executing." << endl;
+    // Signal completion of E
+    S4.notify();
+}
+
+int main() {
+    // Create threads
+    thread tA(threadA);
+    thread tB(threadB);
+    thread tC(threadC);
+    thread tD(threadD);
+    thread tE(threadE);
+
+    // Join threads
+    tA.join();
+    tB.join();
+    tC.join();
+    tD.join();
+    tE.join();
+
+    return 0;
+}

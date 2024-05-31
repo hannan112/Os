@@ -1,0 +1,58 @@
+#include <iostream>
+#include <fstream>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#include <cstring>
+
+using namespace std;
+
+// Structure to represent data
+struct MyInfo {
+    string name;
+    int id;
+    float gpa;
+};
+
+int main() {
+    // Generate a key
+    key_t key = ftok("shmfile", 65);
+
+    // Locate the shared memory segment
+    int shmid = shmget(key, sizeof(MyInfo), 0666);
+    if (shmid == -1) {
+        perror("shmget");
+        return 1;
+    }
+
+    // Attach to shared memory
+    MyInfo* info = (MyInfo*)shmat(shmid, NULL, 0);
+    if (info == (MyInfo*)(-1)) {
+        perror("shmat");
+        return 1;
+    }
+
+    // Convert data to string
+    string data = "Name: " + info->name + "\nID: " + to_string(info->id) + "\nGPA: " + to_string(info->gpa);
+
+    // Write data to file
+    ofstream file("student_info.txt");
+    if (file.is_open()) {
+        file << data;
+        file.close();
+    } else {
+        cerr << "Unable to open file." << endl;
+        return 1;
+    }
+
+    // Print file content
+    system("cat student_info.txt");
+
+    // Detach from shared memory
+    shmdt(info);
+
+    // Mark the segment for destruction
+    shmctl(shmid, IPC_RMID, NULL);
+
+    return 0;
+}

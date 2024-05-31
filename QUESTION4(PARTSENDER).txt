@@ -1,0 +1,43 @@
+#include <iostream>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#include <cstring>
+
+using namespace std;
+
+// Structure to represent data
+struct MyInfo {
+    string name;
+    int id;
+    float gpa;
+};
+
+int main() {
+    // Generate a key
+    key_t key = ftok("shmfile", 65);
+
+    // Create shared memory segment
+    int shmid = shmget(key, sizeof(MyInfo), 0666 | IPC_CREAT);
+    if (shmid == -1) {
+        perror("shmget");
+        return 1;
+    }
+
+    // Attach to shared memory
+    MyInfo* info = (MyInfo*)shmat(shmid, NULL, 0);
+    if (info == (MyInfo*)(-1)) {
+        perror("shmat");
+        return 1;
+    }
+
+    // Write data to shared memory
+    info->name = "John Doe";
+    info->id = 12345;
+    info->gpa = 3.8;
+
+    // Detach from shared memory
+    shmdt(info);
+
+    return 0;
+}
